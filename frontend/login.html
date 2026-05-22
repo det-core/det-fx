@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Login — DET Trades</title>
+<meta name="theme-color" content="#060B18">
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .auth-page {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 20px;
+    position: relative;
+  }
+  .auth-page::before {
+    content: '';
+    position: absolute;
+    top: -100px; left: 50%;
+    transform: translateX(-50%);
+    width: 500px; height: 500px;
+    background: radial-gradient(ellipse, rgba(0,212,255,0.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .auth-card {
+    width: 100%;
+    max-width: 420px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 32px 24px;
+    position: relative;
+    z-index: 1;
+    animation: fadeUp 0.4s ease;
+  }
+  .auth-logo {
+    text-align: center;
+    margin-bottom: 28px;
+  }
+  .auth-logo .brand {
+    font-family: var(--font-display);
+    font-size: 1.6rem;
+    font-weight: 900;
+    color: var(--cyan);
+    letter-spacing: 3px;
+  }
+  .auth-logo .brand span { color: var(--gold); }
+  .auth-logo .sub {
+    font-family: var(--font-display);
+    font-size: 0.6rem;
+    letter-spacing: 3px;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+  .auth-title {
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .auth-sub { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 24px; }
+  .remember-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  .checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: var(--text-dim);
+  }
+  .checkbox-label input[type="checkbox"] { accent-color: var(--cyan); width: 16px; height: 16px; }
+  .forgot-link { font-size: 0.8rem; color: var(--cyan); }
+  .auth-footer {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+  .auth-footer a { color: var(--cyan); }
+  .back-home {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-display);
+    font-size: 0.7rem;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    margin-bottom: 24px;
+    max-width: 420px;
+    width: 100%;
+  }
+  .back-home:hover { color: var(--cyan); }
+</style>
+</head>
+<body>
+<div style="position:relative;z-index:1;">
+
+  <div class="auth-page">
+    <a href="/" class="back-home">← BACK TO HOME</a>
+
+    <div class="auth-card">
+      <div class="auth-logo">
+        <div class="brand">DET<span>●</span>TRADES</div>
+        <div class="sub">DARK EMPIRE TECHNOLOGIES</div>
+      </div>
+
+      <div class="auth-title">Welcome Back</div>
+      <div class="auth-sub">Sign in to your trading account</div>
+
+      <form id="login-form">
+        <div class="input-group">
+          <label class="input-label">EMAIL ADDRESS</label>
+          <div class="input-icon">
+            <span class="icon">✉</span>
+            <input type="email" class="input" id="email" placeholder="trader@email.com" required autocomplete="email">
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label class="input-label">PASSWORD</label>
+          <div class="input-icon">
+            <span class="icon">🔒</span>
+            <input type="password" class="input" id="password" placeholder="••••••••" required autocomplete="current-password">
+            <button type="button" id="toggle-pw" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;color:var(--text-muted);font-size:0.85rem">👁</button>
+          </div>
+        </div>
+
+        <div class="remember-row">
+          <label class="checkbox-label">
+            <input type="checkbox" id="remember"> Remember me
+          </label>
+          <span class="forgot-link" style="cursor:pointer" id="forgot-btn">Forgot password?</span>
+        </div>
+
+        <button type="submit" class="btn btn-primary" id="login-btn">SIGN IN</button>
+      </form>
+
+      <div class="divider">or</div>
+
+      <div class="auth-footer">
+        Don't have an account? <a href="/register.html">Create one free</a>
+      </div>
+    </div>
+
+    <div class="watermark" style="margin-top:24px">© 2025 DARK EMPIRE TECHNOLOGIES</div>
+  </div>
+
+</div>
+
+<!-- Forgot Password Modal -->
+<div class="modal-overlay" id="forgot-modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Reset Password</div>
+    <p style="color:var(--text-dim);font-size:0.85rem;margin-bottom:20px">Enter your email and we'll send a reset link via Firebase.</p>
+    <div class="input-group">
+      <label class="input-label">EMAIL</label>
+      <input type="email" class="input" id="reset-email" placeholder="trader@email.com">
+    </div>
+    <button class="btn btn-primary" id="reset-btn">SEND RESET LINK</button>
+    <button class="btn btn-outline mt-12" id="close-forgot">Cancel</button>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script src="/js/config.js"></script>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { getAuth, signInWithEmailAndPassword, sendPasswordResetEmail, setPersistence, browserLocalPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+  // Redirect if already logged in
+  const existingToken = localStorage.getItem("det_token") || sessionStorage.getItem("det_token");
+  if (existingToken) window.location.href = "/dashboard.html";
+
+  const app = initializeApp(DET_CONFIG.FIREBASE);
+  const auth = getAuth(app);
+
+  // Toast
+  function toast(msg, type = "info") {
+    const c = document.getElementById("toast-container");
+    const icons = { success:"✅", error:"❌", info:"ℹ️" };
+    const el = document.createElement("div");
+    el.className = `toast ${type}`;
+    el.innerHTML = `<span>${icons[type]||"ℹ️"}</span><span>${msg}</span>`;
+    c.appendChild(el);
+    setTimeout(() => { el.style.animation = "slideOut 0.3s ease forwards"; setTimeout(() => el.remove(), 300); }, 3500);
+  }
+
+  function btnLoading(btn, loading) {
+    if (loading) { btn.dataset.orig = btn.innerHTML; btn.innerHTML = '<span class="spinner"></span> Signing in...'; btn.disabled = true; }
+    else { btn.innerHTML = btn.dataset.orig; btn.disabled = false; }
+  }
+
+  // Password toggle
+  document.getElementById("toggle-pw").onclick = () => {
+    const pw = document.getElementById("password");
+    pw.type = pw.type === "password" ? "text" : "password";
+  };
+
+  // Login form
+  document.getElementById("login-form").onsubmit = async (e) => {
+    e.preventDefault();
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value;
+    const remember = document.getElementById("remember").checked;
+    const btn = document.getElementById("login-btn");
+
+    btnLoading(btn, true);
+
+    try {
+      // Set Firebase persistence
+      await setPersistence(auth, remember ? browserLocalPersistence : browserSessionPersistence);
+      await signInWithEmailAndPassword(auth, email, password);
+
+      // Call backend login
+      const res = await fetch(`${DET_CONFIG.API_BASE}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, remember }),
+      });
+      const data = await res.json();
+
+      if (!data.success) {
+        toast(data.message || "Login failed", "error");
+        btnLoading(btn, false);
+        return;
+      }
+
+      // Store session
+      const store = remember ? localStorage : sessionStorage;
+      store.setItem("det_token", data.token);
+      store.setItem("det_user", JSON.stringify(data.user));
+
+      toast("Welcome back! Redirecting...", "success");
+      setTimeout(() => {
+        if (data.user.role === "admin" || data.user.role === "superadmin") {
+          window.location.href = "/admin/index.html";
+        } else {
+          window.location.href = "/dashboard.html";
+        }
+      }, 800);
+
+    } catch (err) {
+      let msg = "Login failed. Try again.";
+      if (err.code === "auth/invalid-credential" || err.code === "auth/wrong-password") msg = "Invalid email or password";
+      if (err.code === "auth/user-not-found") msg = "No account found with this email";
+      if (err.code === "auth/too-many-requests") msg = "Too many attempts. Try later.";
+      toast(msg, "error");
+      btnLoading(btn, false);
+    }
+  };
+
+  // Forgot password modal
+  document.getElementById("forgot-btn").onclick = () => {
+    document.getElementById("forgot-modal").classList.add("open");
+  };
+  document.getElementById("close-forgot").onclick = () => {
+    document.getElementById("forgot-modal").classList.remove("open");
+  };
+  document.getElementById("reset-btn").onclick = async () => {
+    const email = document.getElementById("reset-email").value.trim();
+    if (!email) { toast("Enter your email", "error"); return; }
+    try {
+      await sendPasswordResetEmail(auth, email);
+      toast("Reset link sent! Check your email.", "success");
+      document.getElementById("forgot-modal").classList.remove("open");
+    } catch {
+      toast("Failed to send reset email", "error");
+    }
+  };
+</script>
+</body>
+</html>

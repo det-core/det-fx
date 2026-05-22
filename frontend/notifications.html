@@ -1,0 +1,89 @@
+<!-- notifications.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Notifications — DET Trades</title>
+<meta name="theme-color" content="#060B18">
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .notif-item {
+    display: flex;
+    gap: 12px;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.15s;
+    position: relative;
+  }
+  .notif-item.unread { background: rgba(0,212,255,0.03); }
+  .notif-item.unread::before { content:''; position:absolute; left:0;top:0;bottom:0;width:3px;background:var(--cyan); }
+  .notif-item:hover { background: var(--panel2); }
+  .notif-icon { font-size: 1.4rem; min-width: 32px; text-align: center; margin-top: 2px; }
+  .notif-title { font-family: var(--font-display); font-size: 0.8rem; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+  .notif-msg { font-size: 0.82rem; color: var(--text-dim); line-height: 1.4; }
+  .notif-time { font-size: 0.7rem; color: var(--text-muted); margin-top: 4px; font-family: var(--font-mono); }
+</style>
+</head>
+<body>
+<nav class="top-nav">
+  <div style="display:flex;align-items:center;gap:10px">
+    <a href="/dashboard.html" style="color:var(--text-muted);font-size:1.1rem">←</a>
+    <div class="nav-logo">NOTIFICATIONS</div>
+  </div>
+  <button class="btn btn-outline btn-sm" id="read-all-btn" style="width:auto">Mark all read</button>
+</nav>
+<div class="app-container">
+  <div style="height:var(--nav-h)"></div>
+  <div id="notif-list"><div style="text-align:center;padding:40px"><div class="spinner spinner-lg"></div></div></div>
+  <div class="watermark">DET TRADES · DARK EMPIRE TECHNOLOGIES</div>
+</div>
+<nav class="bottom-nav">
+  <a href="/dashboard.html" class="bottom-nav-item"><span class="icon">🏠</span><span>Home</span></a>
+  <a href="/analysis.html" class="bottom-nav-item"><span class="icon">📊</span><span>Analyze</span></a>
+  <a href="/signals.html" class="bottom-nav-item"><span class="icon">📡</span><span>Signals</span></a>
+  <a href="/chat.html" class="bottom-nav-item"><span class="icon">💬</span><span>Chat</span></a>
+  <a href="/profile.html" class="bottom-nav-item"><span class="icon">👤</span><span>Profile</span></a>
+</nav>
+<div id="toast-container"></div>
+<script src="/js/config.js"></script><script src="/js/app.js"></script>
+<script>
+  if (!Auth.requireAuth()) throw new Error("redirect");
+  const icons = { welcome:"🚀", referral_reward:"🎁", subscription_activated:"🎉", subscription_expired:"⚠️", subscription_expiring:"⏰", new_signal:"📡", broadcast:"📢", support_reply:"💬", support_message:"💬", payment_failed:"❌", plan_updated:"⬆️" };
+
+  async function load() {
+    const data = await API.get("/signals/notifications/all?limit=50");
+    const list = document.getElementById("notif-list");
+    if (!data?.success || !data.notifications.length) {
+      list.innerHTML = `<div class="empty-state"><div class="icon">🔔</div><p>No notifications yet</p></div>`;
+      return;
+    }
+    list.innerHTML = data.notifications.map(n => `
+      <div class="notif-item ${n.read ? "" : "unread"}" onclick="markRead('${n.id}',this)">
+        <div class="notif-icon">${icons[n.type] || "ℹ️"}</div>
+        <div style="flex:1">
+          <div class="notif-title">${n.title}</div>
+          <div class="notif-msg">${n.message}</div>
+          <div class="notif-time">${timeAgo(n.created_at)}</div>
+        </div>
+        ${!n.read ? `<div style="width:8px;height:8px;min-width:8px;background:var(--cyan);border-radius:50%;margin-top:6px"></div>` : ""}
+      </div>`).join("");
+  }
+
+  async function markRead(id, el) {
+    el.classList.remove("unread");
+    el.querySelector("div:last-child")?.remove();
+    await API.patch(`/signals/notifications/${id}/read`);
+  }
+
+  document.getElementById("read-all-btn").onclick = async () => {
+    await API.patch("/signals/notifications/read-all");
+    document.querySelectorAll(".notif-item").forEach(el => el.classList.remove("unread"));
+    Toast.success("All notifications marked as read");
+  };
+
+  load();
+</script>
+</body>
+</html>

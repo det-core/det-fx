@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Signals — DET Trades</title>
+<meta name="theme-color" content="#060B18">
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .signal-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+    margin-bottom: 12px;
+    transition: all 0.2s;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+  }
+  .signal-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+  }
+  .signal-card.bullish::before { background: var(--success); }
+  .signal-card.bearish::before { background: var(--danger); }
+  .signal-card.neutral::before { background: var(--warning); }
+  .signal-card:hover { border-color: var(--border2); transform: translateY(-1px); }
+  .signal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .signal-pair-big { font-family: var(--font-display); font-size: 1.2rem; font-weight: 900; color: var(--text); }
+  .signal-body { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+  .sig-level { text-align: center; }
+  .sig-level .lbl { font-size: 0.65rem; color: var(--text-muted); font-family: var(--font-display); letter-spacing: 0.5px; margin-bottom: 2px; }
+  .sig-level .val { font-family: var(--font-mono); font-size: 0.85rem; font-weight: 600; }
+  .sl-val { color: var(--danger); }
+  .tp-val { color: var(--success); }
+  .entry-val { color: var(--cyan); }
+  .signal-footer { display: flex; align-items: center; justify-content: space-between; padding-top: 10px; border-top: 1px solid var(--border); }
+  .signal-time { font-size: 0.7rem; color: var(--text-muted); font-family: var(--font-mono); }
+  .outcome-badge { padding: 3px 10px; border-radius: 100px; font-size: 0.65rem; font-family: var(--font-display); letter-spacing: 0.5px; }
+  .outcome-win { background: rgba(0,255,136,0.1); color: var(--success); border: 1px solid rgba(0,255,136,0.3); }
+  .outcome-loss { background: rgba(255,59,92,0.1); color: var(--danger); border: 1px solid rgba(255,59,92,0.3); }
+  .outcome-running { background: var(--cyan-dim); color: var(--cyan); border: 1px solid var(--cyan-glow); }
+  .locked-signal {
+    background: rgba(6,11,24,0.7);
+    backdrop-filter: blur(6px);
+    border-radius: var(--radius);
+    padding: 16px;
+    text-align: center;
+    margin-top: 8px;
+  }
+  .locked-signal p { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 10px; }
+  .filter-row {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    margin-bottom: 16px;
+    scrollbar-width: none;
+  }
+  .filter-row::-webkit-scrollbar { display: none; }
+  .filter-chip {
+    padding: 6px 14px;
+    border-radius: 100px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    font-family: var(--font-display);
+    font-size: 0.65rem;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .filter-chip.active { background: var(--cyan-dim); border-color: var(--cyan); color: var(--cyan); }
+  .monthly-gate {
+    background: linear-gradient(135deg, var(--panel), rgba(240,180,41,0.05));
+    border: 1px solid var(--gold-glow);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    text-align: center;
+    margin-bottom: 16px;
+  }
+  .monthly-gate .icon { font-size: 2.5rem; margin-bottom: 12px; }
+  .monthly-gate h3 { font-family: var(--font-display); font-size: 1rem; color: var(--gold); margin-bottom: 8px; }
+  .monthly-gate p { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px; }
+  .tp-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+  .tp-chip { padding: 3px 10px; background: rgba(0,255,136,0.08); border: 1px solid rgba(0,255,136,0.2); border-radius: 4px; font-family: var(--font-mono); font-size: 0.75rem; color: var(--success); }
+  .tp-chip.tp3 { color: var(--gold); border-color: rgba(240,180,41,0.2); background: var(--gold-dim); }
+</style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <div class="nav-logo">DET<span>●</span>TRADES</div>
+  <div class="nav-actions">
+    <a href="/notifications.html" class="nav-notif-btn">🔔<span class="notif-badge hidden" id="notif-badge"></span></a>
+    <a href="/profile.html" class="nav-avatar" id="nav-avatar">U</a>
+  </div>
+</nav>
+
+<div class="app-container">
+  <div class="page-header">
+    <h2>Signal <span style="color:var(--cyan)">Feed</span></h2>
+    <p>Admin-curated trade setups updated daily</p>
+  </div>
+
+  <div style="padding:0 16px">
+
+    <!-- Filter chips -->
+    <div class="filter-row">
+      <div class="filter-chip active" data-filter="all" onclick="filterSignals('all',this)">ALL</div>
+      <div class="filter-chip" data-filter="BULLISH" onclick="filterSignals('BULLISH',this)">📈 BULLISH</div>
+      <div class="filter-chip" data-filter="BEARISH" onclick="filterSignals('BEARISH',this)">📉 BEARISH</div>
+      <div class="filter-chip" data-filter="win" onclick="filterSignals('win',this)">✅ WINS</div>
+      <div class="filter-chip" data-filter="running" onclick="filterSignals('running',this)">⚡ RUNNING</div>
+    </div>
+
+    <!-- Monthly gate -->
+    <div class="monthly-gate" id="monthly-gate" style="display:none">
+      <div class="icon">📡</div>
+      <h3>FULL SIGNAL ACCESS</h3>
+      <p>Monthly subscribers get complete signal details including TP2, TP3, full AI reasoning, and priority alerts.</p>
+      <a href="/pricing.html" class="btn btn-gold" style="max-width:220px;margin:0 auto">UPGRADE TO MONTHLY</a>
+    </div>
+
+    <!-- Signals list -->
+    <div id="signals-list">
+      <div style="text-align:center;padding:40px"><div class="spinner spinner-lg"></div></div>
+    </div>
+
+    <div class="watermark">DET TRADES · DARK EMPIRE TECHNOLOGIES</div>
+  </div>
+</div>
+
+<!-- Signal Detail Modal -->
+<div class="modal-overlay" id="signal-modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+<nav class="bottom-nav">
+  <a href="/dashboard.html" class="bottom-nav-item" data-page="dashboard.html"><span class="icon">🏠</span><span>Home</span></a>
+  <a href="/analysis.html" class="bottom-nav-item" data-page="analysis.html"><span class="icon">📊</span><span>Analyze</span></a>
+  <a href="/signals.html" class="bottom-nav-item active" data-page="signals.html"><span class="icon">📡</span><span>Signals</span></a>
+  <a href="/chat.html" class="bottom-nav-item" data-page="chat.html"><span class="icon">💬</span><span>Chat</span></a>
+  <a href="/profile.html" class="bottom-nav-item" data-page="profile.html"><span class="icon">👤</span><span>Profile</span></a>
+</nav>
+
+<div id="toast-container"></div>
+<script src="/js/config.js"></script>
+<script src="/js/app.js"></script>
+<script>
+  if (!Auth.requireAuth()) throw new Error("redirect");
+
+  const user = Auth.getUser();
+  const plan = user.effective_plan || user.subscription?.plan || "free";
+  const isMonthly = plan === "monthly";
+
+  if (!isMonthly) document.getElementById("monthly-gate").style.display = "block";
+
+  let allSignals = [];
+  let currentFilter = "all";
+
+  async function loadSignals() {
+    const data = await API.get("/signals?limit=30");
+    if (!data?.success) {
+      document.getElementById("signals-list").innerHTML = `<div class="empty-state"><div class="icon">📡</div><p>Failed to load signals</p></div>`;
+      return;
+    }
+    allSignals = data.signals || [];
+    renderSignals(allSignals);
+  }
+
+  function renderSignals(signals) {
+    const list = document.getElementById("signals-list");
+    if (!signals.length) {
+      list.innerHTML = `<div class="empty-state"><div class="icon">📡</div><p>No signals yet. Check back soon.</p></div>`;
+      return;
+    }
+    list.innerHTML = signals.map(s => {
+      const biasClass = (s.bias || "").toLowerCase();
+      const outcomeHTML = s.outcome
+        ? `<span class="outcome-badge outcome-${s.outcome}">${s.outcome === "win" ? "✅ WIN" : s.outcome === "loss" ? "❌ LOSS" : "💰 BREAKEVEN"}</span>`
+        : `<span class="outcome-badge outcome-running">⚡ RUNNING</span>`;
+
+      const tp2HTML = s.tp2 ? `<span class="tp-chip">TP2: ${s.tp2.price}</span>` : (s.locked ? `<span class="tp-chip" style="opacity:0.4">🔒 TP2</span>` : "");
+      const tp3HTML = s.tp3 ? `<span class="tp-chip tp3">TP3: ${s.tp3.price}</span>` : (s.locked ? `<span class="tp-chip tp3" style="opacity:0.4">🔒 TP3</span>` : "");
+
+      return `
+        <div class="signal-card ${biasClass}" onclick="openSignal('${s.id}')">
+          <div class="signal-header">
+            <div>
+              <div class="signal-pair-big">${s.pair}</div>
+              <div style="margin-top:4px">${biasBadge(s.bias)}</div>
+            </div>
+            ${outcomeHTML}
+          </div>
+          <div class="signal-body">
+            <div class="sig-level">
+              <div class="lbl">ENTRY</div>
+              <div class="val entry-val">${s.entry_zone?.from || "—"}</div>
+            </div>
+            <div class="sig-level">
+              <div class="lbl">STOP LOSS</div>
+              <div class="val sl-val">${s.stop_loss?.price || "—"}</div>
+            </div>
+            <div class="sig-level">
+              <div class="lbl">TP1</div>
+              <div class="val tp-val">${s.tp1?.price || "—"}</div>
+            </div>
+          </div>
+          <div class="tp-row">
+            ${tp2HTML}${tp3HTML}
+            ${s.confidence_score ? `<span class="badge badge-muted" style="font-size:0.65rem">${s.confidence_score}% confidence</span>` : ""}
+          </div>
+          <div class="signal-footer">
+            <span class="signal-time">${timeAgo(s.created_at)}</span>
+            <span style="font-size:0.75rem;color:var(--cyan)">TAP FOR DETAILS →</span>
+          </div>
+        </div>`;
+    }).join("");
+  }
+
+  function filterSignals(filter, el) {
+    currentFilter = filter;
+    document.querySelectorAll(".filter-chip").forEach(c => c.classList.remove("active"));
+    el.classList.add("active");
+
+    let filtered = allSignals;
+    if (filter === "all") filtered = allSignals;
+    else if (filter === "win" || filter === "running" || filter === "loss") {
+      filtered = allSignals.filter(s => s.outcome === filter || (!s.outcome && filter === "running"));
+    } else {
+      filtered = allSignals.filter(s => s.bias === filter);
+    }
+    renderSignals(filtered);
+  }
+
+  function openSignal(id) {
+    const s = allSignals.find(s => s.id === id);
+    if (!s) return;
+    const modal = document.getElementById("signal-modal");
+    const content = document.getElementById("modal-content");
+
+    content.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <div>
+          <div style="font-family:var(--font-display);font-size:1.4rem;font-weight:900">${s.pair}</div>
+          <div style="margin-top:4px">${biasBadge(s.bias)}</div>
+        </div>
+        <button onclick="document.getElementById('signal-modal').classList.remove('open')" style="background:var(--panel2);border:1px solid var(--border);border-radius:50%;width:32px;height:32px;color:var(--text-muted)">✕</button>
+      </div>
+      <div class="glow-line"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0">
+        <div style="background:var(--panel2);border-radius:var(--radius);padding:12px">
+          <div style="font-size:0.65rem;color:var(--text-muted);font-family:var(--font-display);margin-bottom:4px">ENTRY ZONE</div>
+          <div style="font-family:var(--font-mono);font-size:0.9rem;color:var(--cyan)">${s.entry_zone?.from || "—"} – ${s.entry_zone?.to || "—"}</div>
+        </div>
+        <div style="background:var(--panel2);border-radius:var(--radius);padding:12px">
+          <div style="font-size:0.65rem;color:var(--text-muted);font-family:var(--font-display);margin-bottom:4px">STOP LOSS</div>
+          <div style="font-family:var(--font-mono);font-size:0.9rem;color:var(--danger)">${s.stop_loss?.price || "—"} <span style="font-size:0.7rem;color:var(--text-muted)">(${s.stop_loss?.pips || "—"} pips)</span></div>
+        </div>
+        <div style="background:var(--panel2);border-radius:var(--radius);padding:12px">
+          <div style="font-size:0.65rem;color:var(--text-muted);font-family:var(--font-display);margin-bottom:4px">TP1 ${s.tp1?.rr_ratio || ""}</div>
+          <div style="font-family:var(--font-mono);font-size:0.9rem;color:var(--success)">${s.tp1?.price || "—"}</div>
+        </div>
+        ${isMonthly && s.tp2 ? `<div style="background:var(--panel2);border-radius:var(--radius);padding:12px"><div style="font-size:0.65rem;color:var(--text-muted);font-family:var(--font-display);margin-bottom:4px">TP2 ${s.tp2?.rr_ratio || ""}</div><div style="font-family:var(--font-mono);font-size:0.9rem;color:var(--success)">${s.tp2.price}</div></div>` : ""}
+        ${isMonthly && s.tp3 ? `<div style="background:var(--panel2);border-radius:var(--radius);padding:12px"><div style="font-size:0.65rem;color:var(--text-muted);font-family:var(--font-display);margin-bottom:4px">TP3 ${s.tp3?.rr_ratio || ""}</div><div style="font-family:var(--font-mono);font-size:0.9rem;color:var(--gold)">${s.tp3.price}</div></div>` : ""}
+      </div>
+      ${isMonthly && s.reasoning ? `
+        <div style="background:var(--panel2);border-radius:var(--radius);padding:12px;margin-bottom:12px">
+          <div style="font-size:0.65rem;color:var(--cyan);font-family:var(--font-display);letter-spacing:1px;margin-bottom:6px">AI REASONING</div>
+          <p style="font-size:0.82rem;color:var(--text-dim);line-height:1.6">${s.reasoning["4h_analysis"] || s.reasoning || "—"}</p>
+        </div>` : ""}
+      ${s.note ? `<div style="font-size:0.82rem;color:var(--text-dim);padding:10px;background:var(--panel2);border-radius:var(--radius);margin-bottom:12px">${s.note}</div>` : ""}
+      <div style="font-size:0.7rem;color:var(--text-muted);text-align:center;margin-top:4px">${formatDateTime(s.created_at)} · Not financial advice</div>`;
+
+    modal.classList.add("open");
+  }
+
+  document.getElementById("signal-modal").addEventListener("click", (e) => {
+    if (e.target === document.getElementById("signal-modal")) {
+      document.getElementById("signal-modal").classList.remove("open");
+    }
+  });
+
+  loadSignals();
+</script>
+</body>
+</html>

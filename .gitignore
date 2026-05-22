@@ -1,0 +1,16 @@
+venv/
+env/
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+node_modules/
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+.auth_info/
+auth_info/
+Null_Sessions/
+.Null_Sessions/
+

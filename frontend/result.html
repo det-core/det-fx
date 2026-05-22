@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Analysis Result — DET Trades</title>
+<meta name="theme-color" content="#060B18">
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .result-hero {
+    background: linear-gradient(135deg, var(--panel) 0%, rgba(0,212,255,0.05) 100%);
+    border-bottom: 1px solid var(--border);
+    padding: calc(var(--nav-h) + 20px) 16px 20px;
+  }
+  .result-pair { font-family: var(--font-display); font-size: 2rem; font-weight: 900; color: var(--text); }
+  .result-meta { display: flex; align-items: center; gap: 10px; margin-top: 8px; flex-wrap: wrap; }
+  .confidence-ring {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: conic-gradient(var(--cyan) var(--pct), var(--border) 0);
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+  }
+  .confidence-ring::before {
+    content: '';
+    position: absolute;
+    inset: 6px;
+    background: var(--panel);
+    border-radius: 50%;
+  }
+  .confidence-val { position: relative; z-index: 1; font-family: var(--font-display); font-size: 0.7rem; font-weight: 700; color: var(--cyan); }
+  /* Level cards */
+  .level-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+  .level-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+  }
+  .level-label { font-family: var(--font-display); font-size: 0.65rem; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 6px; }
+  .level-val { font-family: var(--font-mono); font-size: 1.1rem; font-weight: 700; color: var(--text); }
+  .level-sub { font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; }
+  .sl-card { border-color: rgba(255,59,92,0.3); }
+  .sl-card .level-val { color: var(--danger); }
+  .tp1-card { border-color: rgba(0,255,136,0.2); }
+  .tp1-card .level-val { color: var(--success); }
+  .tp2-card { border-color: rgba(0,255,136,0.15); }
+  .tp2-card .level-val { color: var(--success); }
+  .tp3-card { border-color: rgba(240,180,41,0.2); }
+  .tp3-card .level-val { color: var(--gold); }
+  /* Entry zone */
+  .entry-card {
+    background: var(--panel);
+    border: 1px solid var(--cyan-glow);
+    border-radius: var(--radius);
+    padding: 14px;
+    margin-bottom: 16px;
+  }
+  /* Reasoning */
+  .reasoning-section { background: var(--panel2); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px; margin-bottom: 16px; }
+  .reasoning-point { display: flex; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .reasoning-point:last-child { border-bottom: none; }
+  .reasoning-dot { width: 8px; height: 8px; min-width: 8px; background: var(--cyan); border-radius: 50%; margin-top: 6px; }
+  /* Risk box */
+  .risk-box {
+    background: linear-gradient(135deg, var(--panel), rgba(240,180,41,0.05));
+    border: 1px solid var(--gold-glow);
+    border-radius: var(--radius);
+    padding: 14px;
+    margin-bottom: 16px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .risk-item .lbl { font-size: 0.7rem; color: var(--text-muted); font-family: var(--font-display); letter-spacing: 0.5px; }
+  .risk-item .val { font-family: var(--font-mono); font-size: 1.1rem; color: var(--gold); font-weight: 700; margin-top: 2px; }
+  /* Locked overlay */
+  .locked-overlay {
+    background: rgba(6,11,24,0.85);
+    backdrop-filter: blur(4px);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    text-align: center;
+    border: 1px solid var(--border2);
+    margin-bottom: 16px;
+  }
+  .locked-overlay .lock { font-size: 2rem; margin-bottom: 8px; }
+  .locked-overlay h4 { font-family: var(--font-display); font-size: 0.9rem; color: var(--text); margin-bottom: 6px; }
+  .locked-overlay p { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 16px; }
+</style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <div style="display:flex;align-items:center;gap:10px">
+    <a href="/analysis.html" style="color:var(--text-muted);font-size:1.1rem">←</a>
+    <div class="nav-logo">RESULT</div>
+  </div>
+  <div class="nav-actions">
+    <button class="btn btn-outline btn-sm" id="share-btn" style="width:auto">↗ SHARE</button>
+  </div>
+</nav>
+
+<div class="app-container">
+
+  <!-- Result Hero -->
+  <div class="result-hero" id="result-hero">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between">
+      <div>
+        <div style="font-size:0.7rem;color:var(--text-muted);font-family:var(--font-display);letter-spacing:2px;margin-bottom:4px">ANALYSIS RESULT</div>
+        <div class="result-pair" id="res-pair">GBPUSD</div>
+        <div class="result-meta">
+          <div id="res-bias"></div>
+          <div id="res-session" class="badge badge-muted"></div>
+          <div id="res-strength" class="badge badge-muted"></div>
+        </div>
+      </div>
+      <div style="text-align:center">
+        <div class="confidence-ring" id="confidence-ring" style="--pct:0deg">
+          <span class="confidence-val" id="confidence-val">—</span>
+        </div>
+        <div style="font-size:0.6rem;color:var(--text-muted);margin-top:4px;font-family:var(--font-display)">CONFIDENCE</div>
+      </div>
+    </div>
+    <div style="margin-top:12px;font-size:0.75rem;color:var(--text-muted);font-family:var(--font-mono)" id="res-time"></div>
+  </div>
+
+  <div class="page" style="padding-top:16px">
+
+    <!-- Entry Zone -->
+    <p class="section-title">ENTRY ZONE</p>
+    <div class="entry-card" id="res-entry">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div style="font-family:var(--font-mono);font-size:1.2rem;font-weight:700;color:var(--cyan)" id="entry-range">—</div>
+          <div style="font-size:0.75rem;color:var(--text-muted);margin-top:4px" id="entry-desc">—</div>
+        </div>
+        <div style="font-size:2rem">🎯</div>
+      </div>
+    </div>
+
+    <!-- SL & TPs -->
+    <p class="section-title">STOP LOSS & TARGETS</p>
+    <div class="level-grid">
+      <div class="level-card sl-card">
+        <div class="level-label">🛑 STOP LOSS</div>
+        <div class="level-val" id="res-sl">—</div>
+        <div class="level-sub" id="res-sl-pips">— pips</div>
+      </div>
+      <div class="level-card tp1-card">
+        <div class="level-label">✅ TP1</div>
+        <div class="level-val" id="res-tp1">—</div>
+        <div class="level-sub" id="res-tp1-rr">—</div>
+      </div>
+    </div>
+
+    <!-- TP2/TP3 (premium) -->
+    <div id="tp23-section">
+      <div class="level-grid">
+        <div class="level-card tp2-card">
+          <div class="level-label">🎯 TP2</div>
+          <div class="level-val" id="res-tp2">—</div>
+          <div class="level-sub" id="res-tp2-rr">—</div>
+        </div>
+        <div class="level-card tp3-card">
+          <div class="level-label">💰 TP3</div>
+          <div class="level-val" id="res-tp3">—</div>
+          <div class="level-sub" id="res-tp3-rr">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Risk Calculator Output -->
+    <div id="risk-output" style="display:none">
+      <p class="section-title">RISK CALCULATION</p>
+      <div class="risk-box">
+        <div class="risk-item"><div class="lbl">LOT SIZE</div><div class="val" id="res-lot">—</div></div>
+        <div class="risk-item"><div class="lbl">RISK AMOUNT</div><div class="val" id="res-risk-amt">—</div></div>
+        <div class="risk-item"><div class="lbl">SL PIPS</div><div class="val" id="res-sl-pips2">—</div></div>
+        <div class="risk-item"><div class="lbl">BEST RR</div><div class="val" id="res-best-rr">—</div></div>
+      </div>
+    </div>
+
+    <!-- AI Reasoning (premium) -->
+    <div id="reasoning-section" style="display:none">
+      <p class="section-title">AI REASONING</p>
+      <div class="reasoning-section">
+        <div style="margin-bottom:12px">
+          <div style="font-family:var(--font-display);font-size:0.7rem;letter-spacing:1px;color:var(--cyan);margin-bottom:6px">4H ANALYSIS</div>
+          <p style="font-size:0.85rem;color:var(--text-dim);line-height:1.6" id="res-4h-analysis">—</p>
+        </div>
+        <div class="glow-line"></div>
+        <div style="margin-bottom:12px">
+          <div style="font-family:var(--font-display);font-size:0.7rem;letter-spacing:1px;color:var(--gold);margin-bottom:6px">15M CONFIRMATION</div>
+          <p style="font-size:0.85rem;color:var(--text-dim);line-height:1.6" id="res-15m-analysis">—</p>
+        </div>
+        <div class="glow-line"></div>
+        <div>
+          <div style="font-family:var(--font-display);font-size:0.7rem;letter-spacing:1px;color:var(--text-muted);margin-bottom:8px">CONFLUENCE FACTORS</div>
+          <div id="res-confluence"></div>
+        </div>
+        <div style="margin-top:12px;padding:12px;background:rgba(255,59,92,0.05);border:1px solid rgba(255,59,92,0.2);border-radius:var(--radius)">
+          <div style="font-family:var(--font-display);font-size:0.65rem;letter-spacing:1px;color:var(--danger);margin-bottom:4px">⛔ INVALIDATION</div>
+          <p style="font-size:0.8rem;color:var(--text-dim)" id="res-invalidation">—</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Locked state for free users -->
+    <div id="locked-section" style="display:none">
+      <div class="locked-overlay">
+        <div class="lock">🔒</div>
+        <h4>PREMIUM FEATURES LOCKED</h4>
+        <p>Upgrade to Weekly or Monthly to unlock TP2, TP3, AI reasoning, risk calculator and full analysis history.</p>
+        <a href="/pricing.html" class="btn btn-gold" style="max-width:200px;margin:0 auto">UPGRADE NOW</a>
+      </div>
+    </div>
+
+    <!-- Risk Warning -->
+    <div style="background:var(--panel2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:20px">
+      <div style="font-family:var(--font-display);font-size:0.65rem;letter-spacing:1px;color:var(--warning);margin-bottom:4px">⚠ RISK DISCLAIMER</div>
+      <p style="font-size:0.75rem;color:var(--text-muted);line-height:1.5" id="res-warning">This is AI-generated analysis for educational purposes only. Not financial advice. Always use proper risk management.</p>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-bottom:20px">
+      <a href="/analysis.html" class="btn btn-outline">NEW ANALYSIS</a>
+      <a href="/history.html" class="btn btn-outline" id="history-btn">VIEW HISTORY</a>
+    </div>
+
+    <div class="watermark">DET TRADES · DARK EMPIRE TECHNOLOGIES</div>
+  </div>
+</div>
+
+<!-- Bottom Nav -->
+<nav class="bottom-nav">
+  <a href="/dashboard.html" class="bottom-nav-item" data-page="dashboard.html"><span class="icon">🏠</span><span>Home</span></a>
+  <a href="/analysis.html" class="bottom-nav-item active" data-page="analysis.html"><span class="icon">📊</span><span>Analyze</span></a>
+  <a href="/signals.html" class="bottom-nav-item" data-page="signals.html"><span class="icon">📡</span><span>Signals</span></a>
+  <a href="/chat.html" class="bottom-nav-item" data-page="chat.html"><span class="icon">💬</span><span>Chat</span></a>
+  <a href="/profile.html" class="bottom-nav-item" data-page="profile.html"><span class="icon">👤</span><span>Profile</span></a>
+</nav>
+
+<div id="toast-container"></div>
+<script src="/js/config.js"></script>
+<script src="/js/app.js"></script>
+<script>
+  if (!Auth.requireAuth()) throw new Error("redirect");
+
+  const resultData = JSON.parse(sessionStorage.getItem("det_analysis_result") || "null");
+  if (!resultData?.analysis) { window.location.href = "/analysis.html"; }
+
+  const a = resultData.analysis;
+  const plan = resultData.plan || "free";
+  const isPremium = plan !== "free";
+
+  // Populate hero
+  document.getElementById("res-pair").textContent = a.pair || "—";
+  document.getElementById("res-bias").innerHTML = biasBadge(a.bias || "NEUTRAL");
+  document.getElementById("res-session").textContent = a.market_session?.replace("_"," ") || "—";
+  document.getElementById("res-strength").textContent = a.bias_strength || "—";
+  document.getElementById("res-time").textContent = `Analyzed: ${formatDateTime(a.analyzed_at)}`;
+
+  // Confidence ring
+  const conf = a.confidence_score || 0;
+  document.getElementById("confidence-val").textContent = `${conf}%`;
+  document.getElementById("confidence-ring").style.setProperty("--pct", `${(conf/100)*360}deg`);
+  document.getElementById("confidence-ring").style.background = `conic-gradient(${conf >= 70 ? "var(--success)" : conf >= 50 ? "var(--warning)" : "var(--danger)"} ${conf*3.6}deg, var(--border) 0)`;
+
+  // Entry
+  if (a.entry_zone) {
+    document.getElementById("entry-range").textContent = `${a.entry_zone.from} – ${a.entry_zone.to}`;
+    document.getElementById("entry-desc").textContent = a.entry_zone.description || "—";
+  }
+
+  // SL
+  if (a.stop_loss) {
+    document.getElementById("res-sl").textContent = a.stop_loss.price || "—";
+    document.getElementById("res-sl-pips").textContent = `${a.stop_loss.pips || "—"} pips`;
+  }
+
+  // TP1
+  if (a.tp1) {
+    document.getElementById("res-tp1").textContent = a.tp1.price || "—";
+    document.getElementById("res-tp1-rr").textContent = `RR: ${a.tp1.rr_ratio || "—"} · ${a.tp1.pips || "—"} pips`;
+  }
+
+  // Premium features
+  if (isPremium) {
+    if (a.tp2) {
+      document.getElementById("res-tp2").textContent = a.tp2.price || "—";
+      document.getElementById("res-tp2-rr").textContent = `RR: ${a.tp2.rr_ratio || "—"} · ${a.tp2.pips || "—"} pips`;
+    }
+    if (a.tp3) {
+      document.getElementById("res-tp3").textContent = a.tp3.price || "—";
+      document.getElementById("res-tp3-rr").textContent = `RR: ${a.tp3.rr_ratio || "—"} · ${a.tp3.pips || "—"} pips`;
+    }
+
+    // Risk
+    if (a.stop_loss?.lot_size) {
+      document.getElementById("risk-output").style.display = "block";
+      document.getElementById("res-lot").textContent = a.stop_loss.lot_size || "—";
+      document.getElementById("res-risk-amt").textContent = a.stop_loss.risk_amount ? `$${a.stop_loss.risk_amount}` : "—";
+      document.getElementById("res-sl-pips2").textContent = a.stop_loss.pips || "—";
+      document.getElementById("res-best-rr").textContent = a.tp3?.rr_ratio || a.tp2?.rr_ratio || a.tp1?.rr_ratio || "—";
+    }
+
+    // Reasoning
+    if (a.reasoning) {
+      document.getElementById("reasoning-section").style.display = "block";
+      document.getElementById("res-4h-analysis").textContent = a.reasoning["4h_analysis"] || "—";
+      document.getElementById("res-15m-analysis").textContent = a.reasoning["15m_analysis"] || "—";
+      document.getElementById("res-invalidation").textContent = a.reasoning.invalidation || "—";
+      if (a.reasoning.confluence_factors?.length) {
+        document.getElementById("res-confluence").innerHTML = a.reasoning.confluence_factors.map(f => `
+          <div class="reasoning-point">
+            <div class="reasoning-dot"></div>
+            <span style="font-size:0.82rem;color:var(--text-dim)">${f}</span>
+          </div>`).join("");
+      }
+    }
+  } else {
+    document.getElementById("locked-section").style.display = "block";
+    document.getElementById("tp23-section").style.display = "none";
+    document.getElementById("history-btn").style.display = "none";
+  }
+
+  if (a.risk_warning) document.getElementById("res-warning").textContent = a.risk_warning;
+
+  // Share
+  document.getElementById("share-btn").onclick = () => {
+    const text = `🎯 ${a.pair} ${a.bias} Setup via DET Trades\nEntry: ${a.entry_zone?.from}–${a.entry_zone?.to}\nSL: ${a.stop_loss?.price}\nTP1: ${a.tp1?.price}\nConfidence: ${conf}%\n\nfx.darkempiretech.eu.cc`;
+    if (navigator.share) {
+      navigator.share({ title: `${a.pair} Analysis`, text });
+    } else {
+      navigator.clipboard.writeText(text).then(() => Toast.success("Analysis copied!"));
+    }
+  };
+</script>
+</body>
+</html>

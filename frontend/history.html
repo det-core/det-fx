@@ -1,0 +1,93 @@
+<!-- history.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Analysis History — DET Trades</title>
+<meta name="theme-color" content="#060B18">
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<nav class="top-nav">
+  <div style="display:flex;align-items:center;gap:10px">
+    <a href="/dashboard.html" style="color:var(--text-muted);font-size:1.1rem">←</a>
+    <div class="nav-logo">HISTORY</div>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center">
+    <select class="input" id="pair-filter" style="width:auto;padding:6px 10px;font-size:0.75rem" onchange="loadHistory()">
+      <option value="">All Pairs</option>
+      <option>GBPUSD</option><option>EURUSD</option><option>XAUUSD</option>
+      <option>USDJPY</option><option>AUDUSD</option><option>USDCAD</option>
+    </select>
+  </div>
+</nav>
+<div class="app-container">
+  <div style="height:var(--nav-h)"></div>
+  <div id="history-list" style="padding:16px">
+    <div style="text-align:center;padding:40px"><div class="spinner spinner-lg"></div></div>
+  </div>
+  <div class="watermark">DET TRADES · DARK EMPIRE TECHNOLOGIES</div>
+</div>
+<nav class="bottom-nav">
+  <a href="/dashboard.html" class="bottom-nav-item"><span class="icon">🏠</span><span>Home</span></a>
+  <a href="/analysis.html" class="bottom-nav-item"><span class="icon">📊</span><span>Analyze</span></a>
+  <a href="/signals.html" class="bottom-nav-item"><span class="icon">📡</span><span>Signals</span></a>
+  <a href="/chat.html" class="bottom-nav-item"><span class="icon">💬</span><span>Chat</span></a>
+  <a href="/profile.html" class="bottom-nav-item"><span class="icon">👤</span><span>Profile</span></a>
+</nav>
+<div id="toast-container"></div>
+<script src="/js/config.js"></script><script src="/js/app.js"></script>
+<script>
+  if (!Auth.requireAuth()) throw new Error("redirect");
+  const user = Auth.getUser();
+  const plan = user.effective_plan || user.subscription?.plan || "free";
+
+  async function loadHistory() {
+    const pair = document.getElementById("pair-filter").value;
+    const list = document.getElementById("history-list");
+    if (plan === "free") {
+      list.innerHTML = `<div style="text-align:center;padding:40px 20px"><div style="font-size:3rem;margin-bottom:12px">🔒</div><h3 style="font-family:var(--font-display);font-size:1rem;margin-bottom:8px">History Locked</h3><p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:20px">Upgrade to Weekly or Monthly to access your full analysis history.</p><a href="/pricing.html" class="btn btn-gold" style="max-width:200px;margin:0 auto">UPGRADE NOW</a></div>`;
+      return;
+    }
+    list.innerHTML = `<div style="text-align:center;padding:40px"><div class="spinner spinner-lg"></div></div>`;
+    const url = `/analysis/history?limit=30${pair ? `&pair=${pair}` : ""}`;
+    const data = await API.get(url);
+    if (!data?.success || !data.analyses.length) {
+      list.innerHTML = `<div class="empty-state"><div class="icon">📋</div><p>No analyses found${pair ? ` for ${pair}` : ""}. <a href="/analysis.html" style="color:var(--cyan)">Start one now →</a></p></div>`;
+      return;
+    }
+    list.innerHTML = data.analyses.map(a => `
+      <div class="card" style="margin-bottom:10px;cursor:pointer" onclick="viewResult('${a.id}')">
+        <div class="flex-between" style="margin-bottom:10px">
+          <div>
+            <div style="font-family:var(--font-display);font-size:1rem;font-weight:700">${a.pair}</div>
+            <div style="font-size:0.72rem;color:var(--text-muted);margin-top:2px;font-family:var(--font-mono)">${formatDateTime(a.created_at)}</div>
+          </div>
+          ${biasBadge(a.analysis?.bias || "NEUTRAL")}
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+          <div style="text-align:center"><div style="font-size:0.6rem;color:var(--text-muted)">ENTRY</div><div style="font-family:var(--font-mono);font-size:0.8rem;color:var(--cyan)">${a.analysis?.entry_zone?.from || "—"}</div></div>
+          <div style="text-align:center"><div style="font-size:0.6rem;color:var(--text-muted)">SL</div><div style="font-family:var(--font-mono);font-size:0.8rem;color:var(--danger)">${a.analysis?.stop_loss?.price || "—"}</div></div>
+          <div style="text-align:center"><div style="font-size:0.6rem;color:var(--text-muted)">TP1</div><div style="font-family:var(--font-mono);font-size:0.8rem;color:var(--success)">${a.analysis?.tp1?.price || "—"}</div></div>
+          <div style="text-align:center"><div style="font-size:0.6rem;color:var(--text-muted)">CONF</div><div style="font-family:var(--font-mono);font-size:0.8rem;color:var(--gold)">${a.analysis?.confidence_score || "—"}%</div></div>
+        </div>
+      </div>`).join("");
+  }
+
+  function viewResult(id) {
+    // Store a stub and redirect to result (full data needs separate fetch)
+    // For now redirect to history detail — simplified
+    Toast.info("Loading analysis...");
+    API.get(`/analysis/${id}`).then(data => {
+      if (data?.success) {
+        sessionStorage.setItem("det_analysis_result", JSON.stringify({ analysis: data.analysis.analysis, plan }));
+        window.location.href = "/result.html";
+      }
+    });
+  }
+
+  loadHistory();
+</script>
+</body>
+</html>

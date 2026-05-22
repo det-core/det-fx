@@ -1,0 +1,21 @@
+{
+  "name": "DET Trades",
+  "short_name": "DET Trades",
+  "description": "AI-Powered Forex Analysis by Dark Empire Technologies",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#060B18",
+  "theme_color": "#060B18",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ],
+  "categories": ["finance", "utilities"],
+  "screenshots": [],
+  "shortcuts": [
+    { "name": "New Analysis", "url": "/analysis.html", "description": "Upload charts for AI analysis" },
+    { "name": "Signals", "url": "/signals.html", "description": "View live trading signals" },
+    { "name": "Chat", "url": "/chat.html", "description": "Community chat" }
+  ]
+}

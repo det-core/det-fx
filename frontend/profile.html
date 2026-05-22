@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Profile — DET Trades</title>
+<meta name="theme-color" content="#060B18">
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .profile-hero {
+    background: linear-gradient(135deg, var(--panel), rgba(0,212,255,0.05));
+    border-bottom: 1px solid var(--border);
+    padding: calc(var(--nav-h) + 20px) 16px 24px;
+    text-align: center;
+  }
+  .profile-avatar-wrap {
+    position: relative;
+    display: inline-block;
+    margin-bottom: 12px;
+  }
+  .profile-avatar {
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    background: var(--panel2);
+    border: 3px solid var(--cyan);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-display);
+    font-size: 2rem;
+    color: var(--cyan);
+    overflow: hidden;
+    margin: 0 auto;
+  }
+  .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .profile-name { font-family: var(--font-display); font-size: 1.2rem; font-weight: 900; color: var(--text); margin-bottom: 4px; }
+  .profile-email { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 12px; }
+  .ref-code-box {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--panel2);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 8px 14px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    margin-top: 4px;
+  }
+  .ref-code-box:hover { border-color: var(--gold); }
+  .ref-code { font-family: var(--font-mono); font-size: 1rem; color: var(--gold); letter-spacing: 2px; }
+  .ref-label { font-size: 0.65rem; color: var(--text-muted); font-family: var(--font-display); }
+  .section-card { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius-lg); margin: 16px; overflow: hidden; }
+  .section-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .section-row:last-child { border-bottom: none; }
+  .section-row:hover { background: var(--panel2); }
+  .row-label { display: flex; align-items: center; gap: 10px; font-size: 0.88rem; color: var(--text); }
+  .row-icon { font-size: 1.1rem; width: 24px; text-align: center; }
+  .row-right { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: var(--text-muted); }
+  .milestone-card {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px;
+    text-align: center;
+  }
+  .milestone-val { font-family: var(--font-display); font-size: 1.3rem; font-weight: 700; color: var(--cyan); }
+  .milestone-lbl { font-size: 0.65rem; color: var(--text-muted); margin-top: 2px; }
+</style>
+</head>
+<body>
+<nav class="top-nav">
+  <div class="nav-logo">DET<span>●</span>TRADES</div>
+  <div class="nav-actions">
+    <a href="/notifications.html" class="nav-notif-btn">🔔<span class="notif-badge hidden" id="notif-badge"></span></a>
+  </div>
+</nav>
+
+<div class="app-container">
+
+  <!-- Profile Hero -->
+  <div class="profile-hero">
+    <div class="profile-avatar-wrap">
+      <div class="profile-avatar" id="profile-avatar">U</div>
+    </div>
+    <div class="profile-name" id="profile-name">Loading...</div>
+    <div class="profile-email" id="profile-email">—</div>
+    <div id="plan-badge-wrap"></div>
+    <div class="ref-code-box" onclick="copyReferral()" id="ref-code-box">
+      <div>
+        <div class="ref-label">MY REFERRAL CODE</div>
+        <div class="ref-code" id="ref-code">——</div>
+      </div>
+      <span style="font-size:0.8rem;color:var(--gold)">📋</span>
+    </div>
+  </div>
+
+  <!-- Referral Stats -->
+  <div style="padding:0 16px;margin-top:16px">
+    <p class="section-title">REFERRAL STATS</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+      <div class="milestone-card">
+        <div class="milestone-val" id="ref-count">0</div>
+        <div class="milestone-lbl">Referrals</div>
+      </div>
+      <div class="milestone-card">
+        <div class="milestone-val" id="ref-hours">0h</div>
+        <div class="milestone-lbl">Hours Earned</div>
+      </div>
+      <div class="milestone-card">
+        <div class="milestone-val" id="ref-milestone">—</div>
+        <div class="milestone-lbl">Next Reward</div>
+      </div>
+    </div>
+    <div style="margin-top:12px">
+      <button class="btn btn-outline" onclick="shareReferral()" style="border-color:var(--gold);color:var(--gold)">🔗 SHARE REFERRAL LINK</button>
+    </div>
+  </div>
+
+  <!-- Subscription -->
+  <div style="padding:0 16px;margin-top:20px">
+    <p class="section-title">SUBSCRIPTION</p>
+    <div class="card" id="sub-card">
+      <div class="flex-between">
+        <div>
+          <div style="font-family:var(--font-display);font-size:0.8rem;color:var(--text-muted);margin-bottom:4px">CURRENT PLAN</div>
+          <div id="sub-plan-badge"></div>
+        </div>
+        <a href="/pricing.html" class="btn btn-primary btn-sm" style="width:auto" id="upgrade-btn">UPGRADE</a>
+      </div>
+      <div style="margin-top:12px;font-size:0.8rem;color:var(--text-muted)" id="sub-expiry"></div>
+    </div>
+  </div>
+
+  <!-- Menu -->
+  <div style="margin-top:8px">
+    <div class="section-card">
+      <div class="section-row" onclick="openEditProfile()">
+        <div class="row-label"><span class="row-icon">✏️</span> Edit Profile</div>
+        <div class="row-right">→</div>
+      </div>
+      <div class="section-row" onclick="openChangePassword()">
+        <div class="row-label"><span class="row-icon">🔒</span> Change Password</div>
+        <div class="row-right">→</div>
+      </div>
+      <div class="section-row" onclick="window.location.href='/history.html'">
+        <div class="row-label"><span class="row-icon">📋</span> Analysis History</div>
+        <div class="row-right">→</div>
+      </div>
+      <div class="section-row" onclick="openSupportChat()">
+        <div class="row-label"><span class="row-icon">🎧</span> Support Chat</div>
+        <div class="row-right" id="support-badge"><span style="font-size:0.75rem;color:var(--text-muted)">Monthly only</span></div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-row" onclick="logout()">
+        <div class="row-label" style="color:var(--danger)"><span class="row-icon">🚪</span> Logout</div>
+        <div class="row-right">→</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="watermark">DET TRADES · DARK EMPIRE TECHNOLOGIES · v1.0</div>
+</div>
+
+<!-- Edit Profile Modal -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Edit Profile</div>
+    <div class="input-group">
+      <label class="input-label">USERNAME</label>
+      <input type="text" class="input" id="edit-username" placeholder="New username">
+    </div>
+    <div class="input-group">
+      <label class="input-label">AVATAR URL <span style="color:var(--text-muted)">(Catbox, ImgBB, etc.)</span></label>
+      <input type="url" class="input" id="edit-avatar" placeholder="https://...">
+    </div>
+    <button class="btn btn-primary" id="save-profile-btn">SAVE CHANGES</button>
+    <button class="btn btn-outline mt-12" onclick="document.getElementById('edit-modal').classList.remove('open')">Cancel</button>
+  </div>
+</div>
+
+<!-- Change Password Modal -->
+<div class="modal-overlay" id="pw-modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Change Password</div>
+    <div class="input-group">
+      <label class="input-label">NEW PASSWORD</label>
+      <input type="password" class="input" id="new-password" placeholder="Min. 6 characters" minlength="6">
+    </div>
+    <button class="btn btn-primary" id="save-pw-btn">UPDATE PASSWORD</button>
+    <button class="btn btn-outline mt-12" onclick="document.getElementById('pw-modal').classList.remove('open')">Cancel</button>
+  </div>
+</div>
+
+<!-- Bottom Nav -->
+<nav class="bottom-nav">
+  <a href="/dashboard.html" class="bottom-nav-item"><span class="icon">🏠</span><span>Home</span></a>
+  <a href="/analysis.html" class="bottom-nav-item"><span class="icon">📊</span><span>Analyze</span></a>
+  <a href="/signals.html" class="bottom-nav-item"><span class="icon">📡</span><span>Signals</span></a>
+  <a href="/chat.html" class="bottom-nav-item"><span class="icon">💬</span><span>Chat</span></a>
+  <a href="/profile.html" class="bottom-nav-item active"><span class="icon">👤</span><span>Profile</span></a>
+</nav>
+
+<div id="toast-container"></div>
+<script src="/js/config.js"></script><script src="/js/app.js"></script>
+<script>
+  if (!Auth.requireAuth()) throw new Error("redirect");
+
+  let currentUser = Auth.getUser();
+  const plan = currentUser.effective_plan || currentUser.subscription?.plan || "free";
+
+  async function loadProfile() {
+    const data = await API.get("/auth/me");
+    if (!data?.success) return;
+    const u = data.user;
+    currentUser = u;
+
+    // Avatar
+    const avatarEl = document.getElementById("profile-avatar");
+    if (u.avatar_url) avatarEl.innerHTML = `<img src="${u.avatar_url}" alt="${u.username}">`;
+    else avatarEl.textContent = u.username?.charAt(0).toUpperCase() || "U";
+
+    document.getElementById("profile-name").textContent = u.username || "—";
+    document.getElementById("profile-email").textContent = u.email || "—";
+    document.getElementById("ref-code").textContent = u.referral?.my_code || "——";
+
+    // Plan badge
+    const planMap = { free: "badge-muted", weekly: "badge-cyan", monthly: "badge-gold" };
+    const p = u.effective_plan || u.subscription?.plan || "free";
+    document.getElementById("plan-badge-wrap").innerHTML = `<span class="badge ${planMap[p]}" style="margin-top:8px">${p.toUpperCase()}</span>`;
+    document.getElementById("sub-plan-badge").innerHTML = `<span class="badge ${planMap[p]}">${p.toUpperCase()}</span>`;
+
+    if (p !== "free") document.getElementById("upgrade-btn").textContent = "MANAGE";
+    if (u.subscription?.expires_at) {
+      document.getElementById("sub-expiry").textContent = `Expires: ${formatDate(u.subscription.expires_at)}`;
+    }
+
+    // Referral
+    document.getElementById("ref-count").textContent = u.referral?.referral_count || 0;
+    document.getElementById("ref-hours").textContent = `${u.referral?.total_bonus_hours || 0}h`;
+    const count = u.referral?.referral_count || 0;
+    document.getElementById("ref-milestone").textContent = count >= 10 ? "✅ MAX" : count >= 3 ? `${10 - count} for month` : `${3 - count} for week`;
+
+    // Support chat access
+    if (p === "monthly") {
+      document.getElementById("support-badge").innerHTML = `<span style="color:var(--cyan)">→</span>`;
+    }
+
+    // Update stored user
+    const remember = localStorage.getItem("det_remember") === "1";
+    const store = remember ? localStorage : sessionStorage;
+    store.setItem("det_user", JSON.stringify(u));
+  }
+
+  function copyReferral() {
+    const code = document.getElementById("ref-code").textContent;
+    const link = `${DET_CONFIG.DOMAIN}/register.html?ref=${code}`;
+    navigator.clipboard.writeText(link).then(() => Toast.success("Referral link copied!")).catch(() => Toast.error("Copy failed"));
+  }
+
+  function shareReferral() {
+    const code = document.getElementById("ref-code").textContent;
+    const link = `${DET_CONFIG.DOMAIN}/register.html?ref=${code}`;
+    if (navigator.share) {
+      navigator.share({ title: "Join DET Trades", text: `Use my referral link to join DET Trades — AI-powered forex analysis:\n${link}` });
+    } else copyReferral();
+  }
+
+  function openEditProfile() {
+    document.getElementById("edit-username").value = currentUser.username || "";
+    document.getElementById("edit-avatar").value = currentUser.avatar_url || "";
+    document.getElementById("edit-modal").classList.add("open");
+  }
+
+  document.getElementById("save-profile-btn").onclick = async () => {
+    const username = document.getElementById("edit-username").value.trim();
+    const avatar_url = document.getElementById("edit-avatar").value.trim();
+    const btn = document.getElementById("save-profile-btn");
+    btnLoading(btn, true);
+    const data = await API.post("/auth/update-profile", { username: username || undefined, avatar_url: avatar_url || undefined });
+    btnLoading(btn, false);
+    if (data?.success) {
+      Toast.success("Profile updated!");
+      document.getElementById("edit-modal").classList.remove("open");
+      loadProfile();
+    } else Toast.error(data?.message || "Failed to update profile");
+  };
+
+  function openChangePassword() { document.getElementById("pw-modal").classList.add("open"); }
+
+  document.getElementById("save-pw-btn").onclick = async () => {
+    const pw = document.getElementById("new-password").value;
+    if (!pw || pw.length < 6) { Toast.error("Password must be at least 6 characters"); return; }
+    const btn = document.getElementById("save-pw-btn");
+    btnLoading(btn, true);
+    const data = await API.post("/auth/change-password", { new_password: pw });
+    btnLoading(btn, false);
+    if (data?.success) { Toast.success("Password updated!"); document.getElementById("pw-modal").classList.remove("open"); }
+    else Toast.error(data?.message || "Failed to update password");
+  };
+
+  function openSupportChat() {
+    const p = currentUser.effective_plan || currentUser.subscription?.plan || "free";
+    if (p !== "monthly") { Toast.warning("Support chat requires Monthly plan"); window.location.href = "/pricing.html"; return; }
+    window.location.href = "/support.html";
+  }
+
+  function logout() {
+    showConfirm("Logout", "Are you sure you want to logout?", async () => {
+      await API.post("/auth/logout");
+      Auth.clear();
+      window.location.href = "/login.html";
+    });
+  }
+
+  document.querySelectorAll(".modal-overlay").forEach(overlay => {
+    overlay.addEventListener("click", e => { if (e.target === overlay) overlay.classList.remove("open"); });
+  });
+
+  loadProfile();
+</script>
+</body>
+</html>
