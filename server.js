@@ -120,6 +120,12 @@ app.use("/api/chat", chatRoutes);
 app.use("/api/signals", signalsRoutes);
 app.use("/api/admin", adminRoutes);
 
+// ── Frontend static files ─────────────────────────────────
+app.use(express.static(path.join(__dirname, "frontend")));
+
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "frontend", "index.html"));
+});
 // ── 404 handler ───────────────────────────────────────────
 app.use((req, res) => {
   res.status(404).json({
