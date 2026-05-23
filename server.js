@@ -147,11 +147,13 @@ app.use((err, req, res, next) => {
 });
 
 // ── Start server ──────────────────────────────────────────
-app.listen(config.APP.PORT, () => {
+const PORT = process.env.PORT || config.APP.PORT;
+
+app.listen(PORT, () => {
   console.log("╔════════════════════════════════════════════╗");
   console.log("║        DET TRADES API — ONLINE             ║");
   console.log("║     Dark Empire Technologies               ║");
-  console.log(`║     Port: ${config.APP.PORT}                          ║`);
+  console.log(`║     Port: ${PORT}                    ║`);
   console.log(`║     Domain: ${config.APP.DOMAIN}  ║`);
   console.log("╚════════════════════════════════════════════╝");
 
