@@ -220,13 +220,16 @@
     try {
       // Set Firebase persistence
       await setPersistence(auth, remember ? browserLocalPersistence : browserSessionPersistence);
-      await signInWithEmailAndPassword(auth, email, password);
 
-      // Call backend login
+      // Sign in with Firebase and get ID token
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const firebase_id_token = await userCredential.user.getIdToken();
+
+      // Call backend login with Firebase ID token
       const res = await fetch(`${DET_CONFIG.API_BASE}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, remember }),
+        body: JSON.stringify({ email, firebase_id_token, remember }),
       });
       const data = await res.json();
 
@@ -240,6 +243,7 @@
       const store = remember ? localStorage : sessionStorage;
       store.setItem("det_token", data.token);
       store.setItem("det_user", JSON.stringify(data.user));
+      if (remember) localStorage.setItem("det_remember", "1");
 
       toast("Welcome back! Redirecting...", "success");
       setTimeout(() => {
