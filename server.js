@@ -1,6 +1,7 @@
 // ============================================================
 //  server.js — DET Trades API Server
 //  Dark Empire Technologies | fx.darkempiretech.eu.cc
+//  Port: 4010
 // ============================================================
 
 const express = require("express");
@@ -24,12 +25,12 @@ const adminRoutes = require("./routes/admin");
 
 const app = express();
 
-// ── Trust proxy (for Render/Nginx) ───────────────────────
+// ── Trust proxy (for Nginx) ───────────────────────────────
 app.set("trust proxy", 1);
 
 // ── Security headers ──────────────────────────────────────
 app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" },
+  crossOriginResourcePolicy: { policy: "cross-origin" }, // allow images to be served cross-origin
 }));
 
 // ── CORS ──────────────────────────────────────────────────
@@ -54,6 +55,7 @@ if (config.APP.ENV === "development") {
 }
 
 // ── Body parsers ──────────────────────────────────────────
+// Note: Paystack webhook needs raw body — handled in subscription route
 app.use((req, res, next) => {
   if (req.originalUrl === "/api/subscription/webhook") {
     next();
@@ -63,7 +65,7 @@ app.use((req, res, next) => {
 });
 app.use(express.urlencoded({ extended: true, limit: "5mb" }));
 
-// ── Static file serving (uploads) ────────────────────────
+// ── Static file serving (VPS uploads) ────────────────────
 app.use("/uploads", express.static(path.join(__dirname, "uploads"), {
   maxAge: "7d",
   etag: true,
@@ -96,7 +98,7 @@ const analysisLimiter = rateLimit({
 });
 app.use("/api/analysis/analyze", analysisLimiter);
 
-// ── IP Block check ────────────────────────────────────────
+// ── IP Block check (global) ───────────────────────────────
 app.use("/api", checkIPBlocked);
 
 // ── Health check ──────────────────────────────────────────
@@ -118,16 +120,7 @@ app.use("/api/chat", chatRoutes);
 app.use("/api/signals", signalsRoutes);
 app.use("/api/admin", adminRoutes);
 
-// ── Frontend static files ─────────────────────────────────
-app.use(express.static(path.join(__dirname, "frontend")));
-
-// ── Catch-all: serve frontend for non-API routes ──────────
-app.get("*", (req, res, next) => {
-  if (req.originalUrl.startsWith("/api/")) return next();
-  res.sendFile(path.join(__dirname, "frontend", "index.html"));
-});
-
-// ── 404 handler (API routes only) ────────────────────────
+// ── 404 handler ───────────────────────────────────────────
 app.use((req, res) => {
   res.status(404).json({
     success: false,
@@ -154,15 +147,15 @@ app.use((err, req, res, next) => {
 });
 
 // ── Start server ──────────────────────────────────────────
-const PORT = process.env.PORT || config.APP.PORT;
-app.listen(PORT, () => {
+app.listen(config.APP.PORT, () => {
   console.log("╔════════════════════════════════════════════╗");
   console.log("║        DET TRADES API — ONLINE             ║");
   console.log("║     Dark Empire Technologies               ║");
-  console.log(`║     Port: ${PORT}                             ║`);
-  console.log(`║     Env:  ${config.APP.ENV}                        ║`);
+  console.log(`║     Port: ${config.APP.PORT}                          ║`);
+  console.log(`║     Domain: ${config.APP.DOMAIN}  ║`);
   console.log("╚════════════════════════════════════════════╝");
 
+  // Start background jobs
   startAllJobs();
 });
 

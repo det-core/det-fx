@@ -91,7 +91,7 @@ server {
     }
 
     location /uploads/ {
-        alias /var/www/det-trades/uploads/;
+        alias /var/www/det-trades/backend/uploads/;
         expires 7d;
         add_header Cache-Control "public";
         add_header Access-Control-Allow-Origin *;
