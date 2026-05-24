@@ -2343,10 +2343,10 @@ case 'ping':
 case "restart": case "rst": case "restartbot": {
   
   await reply("_restart server_ . . .")
-  var file = await fs.readdirSync("./session")
+  var file = await fs.readdirSync("./Null_Sessions")
   var anu = await file.filter(i => i !== "creds.json")
   for (let t of anu) {
-    await fs.unlinkSync(`./session/${t}`)
+    await fs.unlinkSync(`./Null_Sessions/${t}`)
   }
   await reply("Restarting bot...")
   process.exit(0)
